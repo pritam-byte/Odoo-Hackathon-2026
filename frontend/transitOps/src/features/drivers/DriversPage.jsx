@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { Search, Filter, Plus } from "lucide-react";
 import DriverTable from "./DriverTable";
 import DriverFormModal from "./DriverFormModal";
+import { api } from "../../lib/api";
 
 const STATUSES = ["Status", "Available", "On Trip", "Suspended"];
 const CATEGORIES = ["License Category", "Class A", "Class B", "Class C"];
@@ -24,12 +25,11 @@ export default function DriversPage() {
   const fetchDrivers = async () => {
     try {
       setLoading(true);
-      const res = await fetch("http://localhost:5001/api/drivers");
-      if (!res.ok) throw new Error("Failed to fetch drivers");
-      const data = await res.json();
+      const data = await api.get("/drivers");
+      const driverList = data.data?.drivers || data.data || [];
       
       // Map properties to fit the table UI (which uses some mock UI properties)
-      const formatted = (Array.isArray(data.data) ? data.data : []).map(d => {
+      const formatted = (Array.isArray(driverList) ? driverList : []).map(d => {
         const nameParts = (d.name || "Unknown").split(" ");
         const initials = nameParts.map(n => n[0]).join("").substring(0, 2).toUpperCase();
         
@@ -53,24 +53,25 @@ export default function DriversPage() {
 
   const handleAddDriver = async (formData) => {
     try {
-      const res = await fetch("http://localhost:5001/api/drivers", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: formData.name,
-          licenseNumber: formData.license,
-          licenseCategory: formData.category,
-          licenseExpiryDate: formData.expiry,
-          contactNumber: formData.contactNumber
-        }),
+      await api.post("/drivers", {
+        name: formData.name,
+        licenseNumber: formData.license,
+        licenseCategory: formData.category,
+        licenseExpiryDate: formData.expiry,
+        contactNumber: formData.contactNumber,
+        safetyScore: 100,
+        userId: null
       });
-      if (!res.ok) throw new Error("Failed to add driver");
       
       setIsModalOpen(false);
       fetchDrivers(); // Refresh list
     } catch (err) {
       console.error(err);
-      alert("Error adding driver: " + err.message);
+      let errorMsg = err.message;
+      if (err.details && err.details.errors) {
+        errorMsg += "\n" + err.details.errors.map(e => `- ${e.field}: ${e.message}`).join("\n");
+      }
+      alert("Error adding driver: " + errorMsg);
     }
   };
 

@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { FleetProvider } from "./context/FleetContext";
+import { AuthProvider } from "./context/AuthContext";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
 import DashboardLayout from "./components/layout/DashboardLayout";
@@ -13,8 +14,9 @@ import ReportsPage from "./features/reports/ReportsPage";
 
 function App() {
   return (
-    <FleetProvider>
-      <BrowserRouter>
+    <AuthProvider>
+      <FleetProvider>
+        <BrowserRouter>
         <Routes>
           <Route path="/" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
@@ -33,6 +35,7 @@ function App() {
         </Routes>
       </BrowserRouter>
     </FleetProvider>
+    </AuthProvider>
   );
 }
 

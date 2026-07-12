@@ -22,16 +22,9 @@ export default function LoginPage() {
 
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:5001/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Invalid credentials");
-
-      localStorage.setItem("token", data.data ? data.data.token : data.token);
-      localStorage.setItem("user", JSON.stringify(data.data ? data.data.user : data.user));
+      const res = await authService.login({ email, password });
+      localStorage.setItem("token", res.data.user.token || res.data.token || "");
+      localStorage.setItem("user", JSON.stringify(res.data.user || res.data));
 
       navigate("/dashboard");
     } catch (err) {

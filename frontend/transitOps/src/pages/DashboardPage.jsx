@@ -4,6 +4,7 @@ import KpiCard from "../features/dashboard/KpiCard";
 import FleetUtilizationChart from "../features/dashboard/FleetUtilizationChart";
 import TripActivityTable from "../features/dashboard/TripActivityTable";
 import FuelCostChart from "../features/dashboard/FuelCostChart";
+import { api } from "../lib/api";
 
 export default function DashboardPage() {
   const [kpis, setKpis] = useState(null);
@@ -13,11 +14,7 @@ export default function DashboardPage() {
   useEffect(() => {
     const fetchKpis = async () => {
       try {
-        const response = await fetch("http://localhost:5001/api/dashboard/kpis");
-        if (!response.ok) {
-          throw new Error("Failed to fetch KPIs");
-        }
-        const result = await response.json();
+        const result = await api.get("/dashboard");
         setKpis(result.data);
       } catch (err) {
         setError(err.message);

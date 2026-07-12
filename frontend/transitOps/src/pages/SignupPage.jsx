@@ -48,13 +48,7 @@ export default function SignupPage() {
 
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:5001/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password, role }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Failed to register");
+      await authService.register({ name, email, password, role });
 
       setSuccess(true);
       setTimeout(() => {

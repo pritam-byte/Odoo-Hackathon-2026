@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { Search, Filter, Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import VehicleTable from "./VehicleTable";
 import VehicleFormModal from "./VehicleFormModal";
+import { api } from "../../lib/api";
 
 const VEHICLE_TYPES = ["All Types", "Coach", "Minibus", "City Bus", "Box Truck"];
 const STATUSES = ["All Statuses", "Available", "On Trip", "In Shop", "Retired"];
@@ -28,11 +29,10 @@ export default function VehiclesPage() {
   const fetchVehicles = async () => {
     try {
       setLoading(true);
-      const res = await fetch("http://localhost:5001/api/vehicles");
-      if (!res.ok) throw new Error("Failed to fetch vehicles");
-      const data = await res.json();
+      const data = await api.get("/vehicles");
+      const vehicleList = data.data?.vehicles || data.data || [];
       // Provide some fallback properties to match the UI if backend doesn't supply them
-      const withDefaults = (Array.isArray(data.data) ? data.data : []).map(v => ({
+      const withDefaults = (Array.isArray(vehicleList) ? vehicleList : []).map(v => ({
         ...v,
         maxLoad: v.maxLoadCapacity ? `${v.maxLoadCapacity} kg` : "Unknown",
         odometer: v.odometer || "0 km",
@@ -49,26 +49,26 @@ export default function VehiclesPage() {
 
   const handleAddVehicle = async (formData) => {
     try {
-      const res = await fetch("http://localhost:5001/api/vehicles", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          registrationNo: formData.regNo,
-          name: formData.model,
-          model: formData.model,
-          type: formData.type,
-          region: formData.region,
-          maxLoadCapacity: parseInt(formData.maxLoad),
-          acquisitionCost: parseFloat(formData.cost)
-        }),
+      await api.post("/vehicles", {
+        registrationNo: formData.regNo,
+        name: formData.model,
+        model: formData.model,
+        type: formData.type === "Box Truck" ? "TRUCK" : (formData.type === "Minibus" ? "VAN" : "BUS"),
+        region: formData.region || null,
+        maxLoadCapacity: parseInt(formData.maxLoad),
+        acquisitionCost: parseFloat(formData.cost),
+        odometer: 0
       });
-      if (!res.ok) throw new Error("Failed to add vehicle");
       
       setIsModalOpen(false);
       fetchVehicles(); // Refresh list
     } catch (err) {
       console.error(err);
-      alert("Error adding vehicle: " + err.message);
+      let errorMsg = err.message;
+      if (err.details && err.details.errors) {
+        errorMsg += "\n" + err.details.errors.map(e => `- ${e.field}: ${e.message}`).join("\n");
+      }
+      alert("Error adding vehicle: " + errorMsg);
     }
   };
 
