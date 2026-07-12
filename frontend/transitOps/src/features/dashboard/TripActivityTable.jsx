@@ -1,16 +1,66 @@
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
-import { useFleet } from "../../context/FleetContext";
 
 const statusStyles = {
   "In Progress": "bg-blue-50 text-blue-700",
-  Completed: "bg-green-50 text-green-700",
-  Scheduled: "bg-slate-100 text-slate-600",
+  "Completed": "bg-green-50 text-green-700",
+  "Scheduled": "bg-slate-100 text-slate-600",
+  "Cancelled": "bg-red-50 text-red-700",
 };
+
+function shortLocation(fullAddress) {
+  if (!fullAddress) return "";
+  return fullAddress.split(",")[0];
+}
+
+function formatTime(dateStr) {
+  if (!dateStr) return "N/A";
+  return new Date(dateStr).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
 
 export default function TripActivityTable() {
   const navigate = useNavigate();
-  const { trips } = useFleet();
+  const [trips, setTrips] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    fetchTrips();
+  }, []);
+
+  const fetchTrips = async () => {
+    try {
+      const res = await fetch("http://localhost:5001/api/trips");
+      if (!res.ok) throw new Error("Failed to fetch trips");
+      const data = await res.json();
+      
+      const formattedTrips = (data.data || []).map(t => {
+        // Map database statuses to UI statuses
+        let status = "Scheduled";
+        if (t.status === "DISPATCHED") status = "In Progress";
+        if (t.status === "COMPLETED") status = "Completed";
+        if (t.status === "CANCELLED") status = "Cancelled";
+
+        return {
+          id: t.id.substring(0, 8).toUpperCase(), // Shorten UUID for UI
+          route: `${shortLocation(t.source)} → ${shortLocation(t.destination)}`,
+          driver: t.driver ? t.driver.name : "Unknown",
+          vehicle: t.vehicle ? (t.vehicle.registrationNo || t.vehicle.regNo) : "Unknown",
+          status,
+          startTime: formatTime(t.dispatchedAt || t.createdAt),
+        };
+      });
+
+      setTrips(formattedTrips);
+    } catch (err) {
+      console.error(err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const recentTrips = trips.slice(0, 8);
 
   return (
@@ -22,7 +72,11 @@ export default function TripActivityTable() {
         </button>
       </div>
 
-      {recentTrips.length === 0 ? (
+      {error && <div className="mb-4 text-red-600 text-sm">{error}</div>}
+
+      {loading ? (
+        <p className="py-10 text-center text-slate-500 text-sm">Loading trips...</p>
+      ) : recentTrips.length === 0 ? (
         <p className="py-10 text-center text-slate-500 text-sm">No trips dispatched yet.</p>
       ) : (
         <div className="overflow-x-auto">
@@ -38,14 +92,14 @@ export default function TripActivityTable() {
               </tr>
             </thead>
             <tbody>
-              {recentTrips.map((t) => (
-                <tr key={t.id} className="border-t border-slate-100 hover:bg-slate-50 transition text-sm">
+              {recentTrips.map((t, idx) => (
+                <tr key={idx} className="border-t border-slate-100 hover:bg-slate-50 transition text-sm">
                   <td className="py-3 pr-4 font-medium text-slate-900 whitespace-nowrap">{t.id}</td>
                   <td className="py-3 pr-4 text-slate-700 whitespace-nowrap">{t.route}</td>
                   <td className="py-3 pr-4 text-slate-700 whitespace-nowrap">{t.driver}</td>
                   <td className="py-3 pr-4 text-slate-700 whitespace-nowrap">{t.vehicle}</td>
                   <td className="py-3 pr-4 whitespace-nowrap">
-                    <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${statusStyles[t.status]}`}>
+                    <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${statusStyles[t.status] || "bg-slate-100"}`}>
                       {t.status}
                     </span>
                   </td>

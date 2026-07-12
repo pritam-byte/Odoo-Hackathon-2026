@@ -1,55 +1,76 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Calendar, Wrench, CheckCircle2, Plus } from "lucide-react";
 import MaintenanceCard from "./MaintenanceCard";
 import AddMaintenanceModal from "./AddMaintenanceModal";
 
-const INITIAL_RECORDS = [
-  { id: 1, vehicle: "Bus 1024", serviceType: "Oil Change", serviceDate: "May 20, 2025", estimatedCost: 280.0, status: "scheduled" },
-  { id: 2, vehicle: "Bus 1056", serviceType: "Brake Inspection", serviceDate: "May 21, 2025", estimatedCost: 450.0, status: "scheduled" },
-  { id: 3, vehicle: "Bus 1078", serviceType: "Tyre Replacement", serviceDate: "May 23, 2025", estimatedCost: 1200.0, status: "scheduled" },
-
-  { id: 4, vehicle: "Bus 1003", serviceType: "Oil Change", serviceDate: "May 19, 2025", estimatedCost: 280.0, status: "in_shop", subStatus: "in_progress", highlighted: true },
-  { id: 5, vehicle: "Bus 1041", serviceType: "Brake Inspection", serviceDate: "May 18, 2025", estimatedCost: 450.0, status: "in_shop", subStatus: "technician_assigned" },
-
-  { id: 6, vehicle: "Bus 0995", serviceType: "Oil Change", serviceDate: "May 15, 2025", estimatedCost: 280.0, status: "completed", completedDate: "May 16, 2025" },
-  { id: 7, vehicle: "Bus 0971", serviceType: "Brake Inspection", serviceDate: "May 12, 2025", estimatedCost: 450.0, status: "completed", completedDate: "May 13, 2025" },
-  { id: 8, vehicle: "Bus 0988", serviceType: "Tyre Replacement", serviceDate: "May 10, 2025", estimatedCost: 1200.0, status: "completed", completedDate: "May 11, 2025" },
-];
-
 const TABS = [
   { key: "open", label: "Open Maintenance" },
   { key: "in_shop", label: "In Shop" },
-  { key: "scheduled", label: "Scheduled" },
   { key: "completed", label: "Completed" },
 ];
 
+function formatDateForDisplay(dateStr) {
+  if (!dateStr) return "Unknown Date";
+  const d = new Date(dateStr);
+  return d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+}
+
 export default function MaintenancePage() {
-  const [records, setRecords] = useState(INITIAL_RECORDS);
+  const [records, setRecords] = useState([]);
   const [activeTab, setActiveTab] = useState("open");
   const [modalOpen, setModalOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const scheduled = records.filter((r) => r.status === "scheduled");
+  useEffect(() => {
+    fetchLogs();
+  }, []);
+
+  const fetchLogs = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch("http://localhost:5001/api/maintenance");
+      if (!res.ok) throw new Error("Failed to fetch maintenance logs");
+      const data = await res.json();
+      
+      const formatted = (Array.isArray(data.data) ? data.data : []).map(r => ({
+        id: r.id,
+        vehicle: r.vehicle ? (r.vehicle.registrationNo || r.vehicle.regNo) : "Unknown Vehicle",
+        serviceType: r.serviceType,
+        serviceDate: formatDateForDisplay(r.openedAt || r.createdAt),
+        estimatedCost: r.cost || 0,
+        status: r.status === "OPEN" ? "in_shop" : "completed", // Map DB status to UI status
+        subStatus: r.status === "OPEN" ? "in_progress" : undefined,
+        completedDate: r.closedAt ? formatDateForDisplay(r.closedAt) : undefined,
+      }));
+      setRecords(formatted);
+    } catch (err) {
+      console.error(err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const inShop = records.filter((r) => r.status === "in_shop");
   const completed = records.filter((r) => r.status === "completed");
 
-  const handleAddRecord = (newRecord) => {
-    setRecords((prev) => [...prev, { ...newRecord, id: Date.now() }]);
+  const handleAddRecord = () => {
     setModalOpen(false);
+    fetchLogs(); // Refresh the list from the database
   };
 
   const columnsToShow = () => {
     switch (activeTab) {
       case "in_shop":
         return [{ title: "In Shop", icon: <Wrench size={18} />, records: inShop }];
-      case "scheduled":
-        return [{ title: "Scheduled", icon: <Calendar size={18} />, records: scheduled }];
       case "completed":
         return [{ title: "Completed", icon: <CheckCircle2 size={18} className="text-green-600" />, records: completed }];
       case "open":
       default:
         return [
-          { title: "Scheduled", icon: <Calendar size={18} />, records: scheduled },
           { title: "In Shop", icon: <Wrench size={18} />, records: inShop },
+          { title: "Completed", icon: <CheckCircle2 size={18} className="text-green-600" />, records: completed.slice(0, 5) }, // show recent
         ];
     }
   };
@@ -69,6 +90,8 @@ export default function MaintenancePage() {
         </button>
       </div>
 
+      {error && <div className="mb-4 text-red-600 bg-red-50 p-3 rounded-lg border border-red-200">{error}</div>}
+
       <div className="flex gap-6 border-b border-slate-200 mb-6">
         {TABS.map((tab) => (
           <button
@@ -86,9 +109,13 @@ export default function MaintenancePage() {
       </div>
 
       <div className={`grid grid-cols-1 gap-5 ${columns.length === 1 ? "md:grid-cols-1 max-w-md" : columns.length === 2 ? "md:grid-cols-2" : "md:grid-cols-3"}`}>
-        {columns.map((col) => (
-          <MaintenanceColumn key={col.title} title={col.title} icon={col.icon} count={col.records.length} records={col.records} />
-        ))}
+        {loading ? (
+           <div className="col-span-full py-16 text-center text-slate-500">Loading maintenance logs...</div>
+        ) : (
+          columns.map((col) => (
+            <MaintenanceColumn key={col.title} title={col.title} icon={col.icon} count={col.records.length} records={col.records} />
+          ))
+        )}
       </div>
 
       {modalOpen && (

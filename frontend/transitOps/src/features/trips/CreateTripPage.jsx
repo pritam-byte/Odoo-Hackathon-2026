@@ -1,8 +1,7 @@
 // src/features/trips/CreateTripPage.jsx
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { MapPin, Truck, User, Package, Route, Scale, Send } from "lucide-react";
 import CapacityPanel from "./CapacityPanel";
-import { useFleet } from "../../context/FleetContext";
 import { parseCapacityKg } from "../vehicles/capacityUtils";
 
 const MOCK_LOCATIONS = [
@@ -12,7 +11,8 @@ const MOCK_LOCATIONS = [
 ];
 
 export default function CreateTripPage() {
-  const { vehicles, drivers, dispatchTrip } = useFleet();
+  const [availableVehicles, setAvailableVehicles] = useState([]);
+  const [availableDrivers, setAvailableDrivers] = useState([]);
 
   const [source, setSource] = useState("");
   const [destination, setDestination] = useState("");
@@ -20,24 +20,44 @@ export default function CreateTripPage() {
   const [driverId, setDriverId] = useState("");
   const [cargoWeight, setCargoWeight] = useState("");
   const [distance, setDistance] = useState("");
+  const [revenue, setRevenue] = useState("");
+  
   const [stage, setStage] = useState("draft");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  const availableVehicles = useMemo(
-    () => vehicles.filter((v) => v.status === "Available"),
-    [vehicles]
-  );
-  const availableDrivers = useMemo(
-    () => drivers.filter((d) => d.status === "Available"),
-    [drivers]
-  );
+  useEffect(() => {
+    fetchAvailableResources();
+  }, []);
+
+  const fetchAvailableResources = async () => {
+    try {
+      const [vehRes, drvRes] = await Promise.all([
+        fetch("http://localhost:5001/api/vehicles/available"),
+        fetch("http://localhost:5001/api/drivers/available")
+      ]);
+      if (vehRes.ok) {
+        const vehData = await vehRes.json();
+        setAvailableVehicles(vehData.data || vehData || []);
+      }
+      if (drvRes.ok) {
+        const drvData = await drvRes.json();
+        setAvailableDrivers(drvData.data || drvData || []);
+      }
+    } catch (err) {
+      console.error("Failed to fetch available resources", err);
+    }
+  };
 
   const selectedVehicle = useMemo(
-    () => vehicles.find((v) => String(v.id) === String(vehicleId)),
-    [vehicles, vehicleId]
+    () => availableVehicles.find((v) => String(v.id) === String(vehicleId)),
+    [availableVehicles, vehicleId]
   );
-  const maxCapacity = selectedVehicle ? parseCapacityKg(selectedVehicle.maxLoad) : 500;
+  
+  // Use the database's maxLoadCapacity, or fallback to the UI parse if it's a string
+  const maxCapacity = selectedVehicle 
+    ? (selectedVehicle.maxLoadCapacity || parseCapacityKg(selectedVehicle.maxLoad)) 
+    : 500;
 
   const handleCapacityCheck = () => {
     const weight = Number(cargoWeight) || 0;
@@ -46,7 +66,7 @@ export default function CreateTripPage() {
       return;
     }
     if (weight > maxCapacity) {
-      setError(`Cargo exceeds ${selectedVehicle?.regNo || "vehicle"}'s ~${maxCapacity} kg capacity.`);
+      setError(`Cargo exceeds ${selectedVehicle?.regNo || selectedVehicle?.registrationNo || "vehicle"}'s ~${maxCapacity} kg capacity.`);
     } else {
       setError("");
     }
@@ -67,11 +87,31 @@ export default function CreateTripPage() {
 
     setSubmitting(true);
     try {
-      await new Promise((res) => setTimeout(res, 700));
-      dispatchTrip({ source, destination, vehicleId, driverId });
+      const res = await fetch("http://localhost:5001/api/trips", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          source,
+          destination,
+          vehicleId,
+          driverId,
+          cargoWeight: parseFloat(cargoWeight),
+          plannedDistance: parseFloat(distance),
+          revenue: revenue ? parseFloat(revenue) : 0,
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || "Failed to dispatch trip");
+      }
+
       setStage("dispatched");
-    } catch {
-      setError("Failed to dispatch trip. Please try again.");
+      // Remove the selected vehicle and driver from available lists locally
+      setAvailableVehicles(prev => prev.filter(v => String(v.id) !== String(vehicleId)));
+      setAvailableDrivers(prev => prev.filter(d => String(d.id) !== String(driverId)));
+    } catch (err) {
+      setError(err.message || "Failed to dispatch trip. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -135,7 +175,7 @@ export default function CreateTripPage() {
                     {availableVehicles.length === 0 ? "No vehicles available" : "Select a vehicle"}
                   </option>
                   {availableVehicles.map((v) => (
-                    <option key={v.id} value={v.id}>{v.regNo} — {v.model}</option>
+                    <option key={v.id} value={v.id}>{v.registrationNo || v.regNo} — {v.model}</option>
                   ))}
                 </select>
               </div>
@@ -160,36 +200,54 @@ export default function CreateTripPage() {
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Cargo Weight (kg)</label>
-              <div className="relative">
-                <Package size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input
-                  type="number"
-                  min="0"
-                  placeholder="0"
-                  value={cargoWeight}
-                  onChange={(e) => setCargoWeight(e.target.value)}
-                  className="w-full pl-10 pr-12 py-3 border border-slate-300 rounded-lg text-sm outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
-                />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">kg</span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">Cargo Weight (kg)</label>
+                <div className="relative">
+                  <Package size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder="0"
+                    value={cargoWeight}
+                    onChange={(e) => setCargoWeight(e.target.value)}
+                    className="w-full pl-10 pr-12 py-3 border border-slate-300 rounded-lg text-sm outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">kg</span>
+                </div>
+              </div>
+  
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">Planned Distance (km)</label>
+                <div className="relative">
+                  <Route size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    placeholder="0"
+                    value={distance}
+                    onChange={(e) => setDistance(e.target.value)}
+                    className="w-full pl-10 pr-12 py-3 border border-slate-300 rounded-lg text-sm outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">km</span>
+                </div>
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Planned Distance (km)</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">Estimated Revenue ($) (Optional)</label>
               <div className="relative">
-                <Route size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">$</span>
                 <input
                   type="number"
                   min="0"
-                  step="0.1"
-                  placeholder="0"
-                  value={distance}
-                  onChange={(e) => setDistance(e.target.value)}
-                  className="w-full pl-10 pr-12 py-3 border border-slate-300 rounded-lg text-sm outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                  step="0.01"
+                  placeholder="0.00"
+                  value={revenue}
+                  onChange={(e) => setRevenue(e.target.value)}
+                  className="w-full pl-9 pr-3 py-3 border border-slate-300 rounded-lg text-sm outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
                 />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">km</span>
               </div>
             </div>
 
@@ -206,11 +264,11 @@ export default function CreateTripPage() {
               </button>
               <button
                 type="submit"
-                disabled={submitting}
+                disabled={submitting || stage === "dispatched"}
                 className="flex-1 inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-70 text-white font-semibold py-3 rounded-lg transition"
               >
                 <Send size={18} />
-                {submitting ? "Dispatching..." : "Dispatch Trip"}
+                {submitting ? "Dispatching..." : stage === "dispatched" ? "Dispatched" : "Dispatch Trip"}
               </button>
             </div>
           </form>

@@ -1,62 +1,65 @@
-import { useState } from "react";
-import { X } from "lucide-react";
+import { useState, useEffect } from "react";
+import { X, Truck } from "lucide-react";
 
 const SERVICE_TYPES = ["Oil Change", "Brake Inspection", "Tyre Replacement", "Engine Check", "Battery Replacement"];
-const STATUS_OPTIONS = [
-  { value: "scheduled", label: "Scheduled" },
-  { value: "in_shop", label: "In Shop" },
-  { value: "completed", label: "Completed" },
-];
-
-function formatDateForDisplay(dateStr) {
-  if (!dateStr) return "";
-  const d = new Date(dateStr);
-  return d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
-}
 
 export default function AddMaintenanceModal({ onClose, onSubmit }) {
-  const [status, setStatus] = useState("");
-  const [vehicle, setVehicle] = useState("");
+  const [availableVehicles, setAvailableVehicles] = useState([]);
+  
+  const [vehicleId, setVehicleId] = useState("");
   const [serviceType, setServiceType] = useState("");
-  const [serviceDate, setServiceDate] = useState("");
-  const [estimatedCost, setEstimatedCost] = useState("");
-  const [subStatus, setSubStatus] = useState("in_progress");
-  const [completedDate, setCompletedDate] = useState("");
+  const [description, setDescription] = useState("");
+  
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (e) => {
+  useEffect(() => {
+    const fetchVehicles = async () => {
+      try {
+        const res = await fetch("http://localhost:5001/api/vehicles/available");
+        if (res.ok) {
+          const data = await res.json();
+          setAvailableVehicles(data.data || []);
+        }
+      } catch (err) {
+        console.error("Failed to fetch available vehicles", err);
+      }
+    };
+    fetchVehicles();
+  }, []);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
-    if (!status) {
-      setError("Please select a maintenance status first.");
-      return;
-    }
-    if (!vehicle || !serviceType || !serviceDate || !estimatedCost) {
-      setError("Please fill in all fields.");
-      return;
-    }
-    if (status === "completed" && !completedDate) {
-      setError("Please provide the completed date.");
+    if (!vehicleId || !serviceType) {
+      setError("Please select a vehicle and service type.");
       return;
     }
 
-    const record = {
-      vehicle,
-      serviceType,
-      serviceDate: formatDateForDisplay(serviceDate),
-      estimatedCost: Number(estimatedCost),
-      status,
-    };
+    setSubmitting(true);
+    try {
+      const res = await fetch("http://localhost:5001/api/maintenance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          vehicleId,
+          serviceType,
+          description,
+        })
+      });
 
-    if (status === "in_shop") {
-      record.subStatus = subStatus;
-    }
-    if (status === "completed") {
-      record.completedDate = formatDateForDisplay(completedDate);
-    }
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || "Failed to create maintenance log");
+      }
 
-    onSubmit(record);
+      onSubmit(data.data); // Refresh the parent
+    } catch (err) {
+      setError(err.message || "Something went wrong");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -71,98 +74,46 @@ export default function AddMaintenanceModal({ onClose, onSubmit }) {
 
         <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">
-              Maintenance Status
-            </label>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">Available Vehicle</label>
+            <div className="relative">
+              <Truck size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <select
+                value={vehicleId}
+                onChange={(e) => setVehicleId(e.target.value)}
+                className="w-full pl-10 pr-3 py-3 border border-slate-300 rounded-lg text-sm outline-none focus:border-blue-600 bg-white appearance-none"
+              >
+                <option value="">Select a vehicle to service</option>
+                {availableVehicles.map((v) => (
+                  <option key={v.id} value={v.id}>{v.registrationNo || v.regNo} — {v.model}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">Service Type</label>
             <select
-              value={status}
-              onChange={(e) => setStatus(e.target.value)}
+              value={serviceType}
+              onChange={(e) => setServiceType(e.target.value)}
               className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm outline-none focus:border-blue-600 bg-white"
             >
-              <option value="">Select status</option>
-              {STATUS_OPTIONS.map((s) => (
-                <option key={s.value} value={s.value}>{s.label}</option>
+              <option value="">Select service type</option>
+              {SERVICE_TYPES.map((s) => (
+                <option key={s} value={s}>{s}</option>
               ))}
             </select>
           </div>
 
-          {status && (
-            <>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">Vehicle</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Bus 1003"
-                  value={vehicle}
-                  onChange={(e) => setVehicle(e.target.value)}
-                  className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm outline-none focus:border-blue-600"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">Service Type</label>
-                <select
-                  value={serviceType}
-                  onChange={(e) => setServiceType(e.target.value)}
-                  className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm outline-none focus:border-blue-600 bg-white"
-                >
-                  <option value="">Select service type</option>
-                  {SERVICE_TYPES.map((s) => (
-                    <option key={s} value={s}>{s}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">Service Date</label>
-                <input
-                  type="date"
-                  value={serviceDate}
-                  onChange={(e) => setServiceDate(e.target.value)}
-                  className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm outline-none focus:border-blue-600"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">Estimated Cost ($)</label>
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  placeholder="0.00"
-                  value={estimatedCost}
-                  onChange={(e) => setEstimatedCost(e.target.value)}
-                  className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm outline-none focus:border-blue-600"
-                />
-              </div>
-
-              {status === "in_shop" && (
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">In-Shop Progress</label>
-                  <select
-                    value={subStatus}
-                    onChange={(e) => setSubStatus(e.target.value)}
-                    className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm outline-none focus:border-blue-600 bg-white"
-                  >
-                    <option value="in_progress">In Progress</option>
-                    <option value="technician_assigned">Technician Assigned</option>
-                  </select>
-                </div>
-              )}
-
-              {status === "completed" && (
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Completed Date</label>
-                  <input
-                    type="date"
-                    value={completedDate}
-                    onChange={(e) => setCompletedDate(e.target.value)}
-                    className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm outline-none focus:border-blue-600"
-                  />
-                </div>
-              )}
-            </>
-          )}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">Description / Notes</label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Any specific issues reported?"
+              rows={3}
+              className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm outline-none focus:border-blue-600"
+            />
+          </div>
 
           {error && <p className="text-red-600 text-sm">{error}</p>}
 
@@ -176,9 +127,10 @@ export default function AddMaintenanceModal({ onClose, onSubmit }) {
             </button>
             <button
               type="submit"
-              className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold"
+              disabled={submitting}
+              className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-70 text-white rounded-lg text-sm font-semibold transition"
             >
-              Add Maintenance
+              {submitting ? "Adding..." : "Add to In Shop"}
             </button>
           </div>
         </form>
