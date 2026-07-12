@@ -18,7 +18,7 @@ export default function AddMaintenanceModal({ onClose, onSubmit }) {
   const [status, setStatus] = useState("");
   const [vehicle, setVehicle] = useState("");
   const [serviceType, setServiceType] = useState("");
-  const [ServiceDate, setServiceDate] = useState("");
+  const [serviceDate, setServiceDate] = useState("");
   const [estimatedCost, setEstimatedCost] = useState("");
   const [subStatus, setSubStatus] = useState("in_progress");
   const [completedDate, setCompletedDate] = useState("");
@@ -32,7 +32,7 @@ export default function AddMaintenanceModal({ onClose, onSubmit }) {
       setError("Please select a maintenance status first.");
       return;
     }
-    if (!vehicle || !serviceType || !ServiceDate || !estimatedCost) {
+    if (!vehicle || !serviceType || !serviceDate || !estimatedCost) {
       setError("Please fill in all fields.");
       return;
     }
@@ -44,7 +44,7 @@ export default function AddMaintenanceModal({ onClose, onSubmit }) {
     const record = {
       vehicle,
       serviceType,
-      ServiceDate: formatDateForDisplay(ServiceDate),
+      serviceDate: formatDateForDisplay(serviceDate),
       estimatedCost: Number(estimatedCost),
       status,
     };
@@ -70,7 +70,6 @@ export default function AddMaintenanceModal({ onClose, onSubmit }) {
         </div>
 
         <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
-          {/* Step 1: status first, as requested */}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1.5">
               Maintenance Status
@@ -87,7 +86,6 @@ export default function AddMaintenanceModal({ onClose, onSubmit }) {
             </select>
           </div>
 
-          {/* Only show the rest once a status is picked */}
           {status && (
             <>
               <div>
@@ -116,10 +114,10 @@ export default function AddMaintenanceModal({ onClose, onSubmit }) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">Opened Date</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">Service Date</label>
                 <input
                   type="date"
-                  value={ServiceDate}
+                  value={serviceDate}
                   onChange={(e) => setServiceDate(e.target.value)}
                   className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm outline-none focus:border-blue-600"
                 />

@@ -3,18 +3,17 @@ import { Calendar, Wrench, CheckCircle2, Plus } from "lucide-react";
 import MaintenanceCard from "./MaintenanceCard";
 import AddMaintenanceModal from "./AddMaintenanceModal";
 
-// TODO: replace with real data from backend team's /maintenance endpoint
 const INITIAL_RECORDS = [
-  { id: 1, vehicle: "Bus 1024", serviceType: "Oil Change", ServiceDate: "May 20, 2025", estimatedCost: 280.0, status: "scheduled" },
-  { id: 2, vehicle: "Bus 1056", serviceType: "Brake Inspection", ServiceDate: "May 21, 2025", estimatedCost: 450.0, status: "scheduled" },
-  { id: 3, vehicle: "Bus 1078", serviceType: "Tyre Replacement", ServiceDate: "May 23, 2025", estimatedCost: 1200.0, status: "scheduled" },
+  { id: 1, vehicle: "Bus 1024", serviceType: "Oil Change", serviceDate: "May 20, 2025", estimatedCost: 280.0, status: "scheduled" },
+  { id: 2, vehicle: "Bus 1056", serviceType: "Brake Inspection", serviceDate: "May 21, 2025", estimatedCost: 450.0, status: "scheduled" },
+  { id: 3, vehicle: "Bus 1078", serviceType: "Tyre Replacement", serviceDate: "May 23, 2025", estimatedCost: 1200.0, status: "scheduled" },
 
-  { id: 4, vehicle: "Bus 1003", serviceType: "Oil Change", ServiceDate: "May 19, 2025", estimatedCost: 280.0, status: "in_shop", subStatus: "in_progress", highlighted: true },
-  { id: 5, vehicle: "Bus 1041", serviceType: "Brake Inspection", ServiceDate: "May 18, 2025", estimatedCost: 450.0, status: "in_shop", subStatus: "technician_assigned" },
+  { id: 4, vehicle: "Bus 1003", serviceType: "Oil Change", serviceDate: "May 19, 2025", estimatedCost: 280.0, status: "in_shop", subStatus: "in_progress", highlighted: true },
+  { id: 5, vehicle: "Bus 1041", serviceType: "Brake Inspection", serviceDate: "May 18, 2025", estimatedCost: 450.0, status: "in_shop", subStatus: "technician_assigned" },
 
-  { id: 6, vehicle: "Bus 0995", serviceType: "Oil Change", ServiceDate: "May 15, 2025", estimatedCost: 280.0, status: "completed", completedDate: "May 16, 2025" },
-  { id: 7, vehicle: "Bus 0971", serviceType: "Brake Inspection", ServiceDate: "May 12, 2025", estimatedCost: 450.0, status: "completed", completedDate: "May 13, 2025" },
-  { id: 8, vehicle: "Bus 0988", serviceType: "Tyre Replacement", ServiceDate: "May 10, 2025", estimatedCost: 1200.0, status: "completed", completedDate: "May 11, 2025" },
+  { id: 6, vehicle: "Bus 0995", serviceType: "Oil Change", serviceDate: "May 15, 2025", estimatedCost: 280.0, status: "completed", completedDate: "May 16, 2025" },
+  { id: 7, vehicle: "Bus 0971", serviceType: "Brake Inspection", serviceDate: "May 12, 2025", estimatedCost: 450.0, status: "completed", completedDate: "May 13, 2025" },
+  { id: 8, vehicle: "Bus 0988", serviceType: "Tyre Replacement", serviceDate: "May 10, 2025", estimatedCost: 1200.0, status: "completed", completedDate: "May 11, 2025" },
 ];
 
 const TABS = [
@@ -38,7 +37,6 @@ export default function MaintenancePage() {
     setModalOpen(false);
   };
 
-  // Decide which columns to show based on active tab
   const columnsToShow = () => {
     switch (activeTab) {
       case "in_shop":
@@ -60,7 +58,6 @@ export default function MaintenancePage() {
 
   return (
     <div>
-      {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold text-slate-900">Maintenance</h1>
         <button
@@ -72,7 +69,6 @@ export default function MaintenancePage() {
         </button>
       </div>
 
-      {/* Tabs */}
       <div className="flex gap-6 border-b border-slate-200 mb-6">
         {TABS.map((tab) => (
           <button
@@ -89,7 +85,6 @@ export default function MaintenancePage() {
         ))}
       </div>
 
-      {/* Board */}
       <div className={`grid grid-cols-1 gap-5 ${columns.length === 1 ? "md:grid-cols-1 max-w-md" : columns.length === 2 ? "md:grid-cols-2" : "md:grid-cols-3"}`}>
         {columns.map((col) => (
           <MaintenanceColumn key={col.title} title={col.title} icon={col.icon} count={col.records.length} records={col.records} />

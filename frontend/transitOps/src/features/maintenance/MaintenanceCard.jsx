@@ -36,8 +36,8 @@ export default function MaintenanceCard({ record, highlighted = false }) {
           <span className="text-slate-800 font-medium">{record.serviceType}</span>
         </div>
         <div className="flex justify-between">
-          <span className="text-slate-500">Opened Date</span>
-          <span className="text-slate-800 font-medium">{record.ServiceDate}</span>
+          <span className="text-slate-500">Service Date</span>
+          <span className="text-slate-800 font-medium">{record.serviceDate}</span>
         </div>
         <div className="flex justify-between">
           <span className="text-slate-500">Estimated Cost</span>
