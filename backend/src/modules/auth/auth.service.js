@@ -1,7 +1,6 @@
 const bcrypt = require("bcrypt");
-const { randomUUID } = require("crypto");
 
-const store = require("../../data/memory.store");
+const prisma = require("../../config/prisma");
 const { createToken } = require("../../utils/jwt");
 
 const safeUser = (user) => {
@@ -15,9 +14,11 @@ const safeUser = (user) => {
 };
 
 const registerUser = async ({ name, email, password, role }) => {
-  const existingUser = store.users.find(
-    (user) => user.email === email
-  );
+  const existingUser = await prisma.user.findUnique({
+    where: {
+      email,
+    },
+  });
 
   if (existingUser) {
     const error = new Error("An account with this email already exists.");
@@ -27,24 +28,24 @@ const registerUser = async ({ name, email, password, role }) => {
 
   const passwordHash = await bcrypt.hash(password, 12);
 
-  const newUser = {
-    id: randomUUID(),
-    name,
-    email,
-    passwordHash,
-    role,
-    createdAt: new Date().toISOString(),
-  };
-
-  store.users.push(newUser);
+  const newUser = await prisma.user.create({
+    data: {
+      name,
+      email,
+      passwordHash,
+      role,
+    },
+  });
 
   return safeUser(newUser);
 };
 
 const loginUser = async ({ email, password }) => {
-  const user = store.users.find(
-    (currentUser) => currentUser.email === email
-  );
+  const user = await prisma.user.findUnique({
+    where: {
+      email,
+    },
+  });
 
   if (!user) {
     const error = new Error("Invalid email or password.");
@@ -75,9 +76,11 @@ const loginUser = async ({ email, password }) => {
 };
 
 const getCurrentUser = async (userId) => {
-  const user = store.users.find(
-    (currentUser) => currentUser.id === userId
-  );
+  const user = await prisma.user.findUnique({
+    where: {
+      id: userId,
+    },
+  });
 
   if (!user) {
     const error = new Error("User not found.");
