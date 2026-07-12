@@ -1,5 +1,5 @@
+import { useNavigate, Link } from "react-router-dom";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import heroImg from "../assets/hero.png";
 
 export default function LoginPage() {
@@ -130,7 +130,14 @@ export default function LoginPage() {
             >
               {loading ? "Signing in..." : "Sign in"}
             </button>
-          </form>
+         </form>
+
+          <p className="text-center text-sm text-slate-500 mt-6">
+            Don't have an account?{" "}
+            <Link to="/signup" className="text-blue-600 font-medium hover:text-blue-700">
+              Sign up
+            </Link>
+          </p>
         </div>
 
         <p className="flex items-center gap-2 text-slate-500 text-sm mt-6">
