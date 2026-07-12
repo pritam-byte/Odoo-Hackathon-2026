@@ -1,9 +1,10 @@
 import { useState, useMemo } from "react";
 import { Search, Filter, Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import VehicleTable from "./VehicleTable";
+import VehicleModal from "./VehicleModal";
 
 // TODO: replace with real API call to backend team's /vehicles endpoint
-const MOCK_VEHICLES = [
+const INITIAL_VEHICLES = [
   { id: 1, regNo: "TRN-9821", model: "Volvo 9700", type: "Coach", maxLoad: "53 Seats", odometer: "245,680 km", status: "Available", region: "North" },
   { id: 2, regNo: "TRN-7543", model: "Mercedes-Benz Sprinter", type: "Minibus", maxLoad: "19 Seats", odometer: "132,450 km", status: "On Trip", region: "South" },
   { id: 3, regNo: "TRN-3317", model: "MAN Lion's City", type: "City Bus", maxLoad: "85 Passengers", odometer: "312,890 km", status: "Available", region: "East" },
@@ -17,6 +18,8 @@ const STATUSES = ["All Statuses", "Available", "On Trip", "In Shop", "Retired"];
 const REGIONS = ["All Regions", "North", "South", "East", "West"];
 
 export default function VehiclesPage() {
+  const [vehicles, setVehicles] = useState(INITIAL_VEHICLES);
+  const [modalOpen, setModalOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [type, setType] = useState("All Types");
   const [status, setStatus] = useState("All Statuses");
@@ -25,7 +28,7 @@ export default function VehiclesPage() {
   const pageSize = 10;
 
   const filtered = useMemo(() => {
-    return MOCK_VEHICLES.filter((v) => {
+    return vehicles.filter((v) => {
       const matchesSearch =
         v.regNo.toLowerCase().includes(search.toLowerCase()) ||
         v.model.toLowerCase().includes(search.toLowerCase());
@@ -34,7 +37,7 @@ export default function VehiclesPage() {
       const matchesRegion = region === "All Regions" || v.region === region;
       return matchesSearch && matchesType && matchesStatus && matchesRegion;
     });
-  }, [search, type, status, region]);
+  }, [vehicles, search, type, status, region]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const paginated = filtered.slice((page - 1) * pageSize, page * pageSize);
@@ -47,15 +50,19 @@ export default function VehiclesPage() {
     setPage(1);
   };
 
+  const handleAddVehicle = (newVehicle) => {
+    setVehicles((prev) => [newVehicle, ...prev]);
+    setModalOpen(false);
+    setPage(1);
+  };
+
   return (
     <div>
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <h1 className="text-3xl font-bold text-slate-900">Vehicles</h1>
         <button
-          onClick={() => {
-            // TODO: open Add Vehicle modal/form once VehicleForm is ready
-          }}
+          onClick={() => setModalOpen(true)}
           className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2.5 rounded-lg transition"
         >
           <Plus size={18} />
@@ -161,6 +168,12 @@ export default function VehiclesPage() {
           </button>
         </div>
       </div>
+
+      <VehicleModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onSave={handleAddVehicle}
+      />
     </div>
   );
 }
