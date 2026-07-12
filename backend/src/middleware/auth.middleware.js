@@ -7,7 +7,7 @@ const requireAuth = (req, res, next) => {
     if (!token) {
       return res.status(401).json({
         success: false,
-        message: "Authentication required",
+        message: "Authentication required. Please log in.",
       });
     }
 
@@ -19,7 +19,7 @@ const requireAuth = (req, res, next) => {
   } catch (error) {
     return res.status(401).json({
       success: false,
-      message: "Invalid or expired authentication token",
+      message: "Invalid or expired authentication token.",
     });
   }
 };
