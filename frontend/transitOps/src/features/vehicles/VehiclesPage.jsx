@@ -32,9 +32,9 @@ export default function VehiclesPage() {
       if (!res.ok) throw new Error("Failed to fetch vehicles");
       const data = await res.json();
       // Provide some fallback properties to match the UI if backend doesn't supply them
-      const withDefaults = (Array.isArray(data) ? data : []).map(v => ({
+      const withDefaults = (Array.isArray(data.data) ? data.data : []).map(v => ({
         ...v,
-        maxLoad: v.maxLoad ? `${v.maxLoad} kg` : "Unknown",
+        maxLoad: v.maxLoadCapacity ? `${v.maxLoadCapacity} kg` : "Unknown",
         odometer: v.odometer || "0 km",
         status: v.status || "Available"
       }));

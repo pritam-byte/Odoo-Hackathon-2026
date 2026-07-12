@@ -47,16 +47,20 @@ export default function SignupPage() {
 
     setLoading(true);
     try {
-      // TODO: replace with real API call once backend team gives the endpoint
-      // await authService.signup({ name, email, password, role });
-      await new Promise((res) => setTimeout(res, 800)); // temp mock delay
+      const res = await fetch("http://localhost:5001/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password, role }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Failed to register");
 
       setSuccess(true);
       setTimeout(() => {
         navigate("/", { state: { signupEmail: email } });
       }, 1200);
     } catch (err) {
-      setError("Something went wrong while creating your account. Please try again.");
+      setError(err.message || "Something went wrong while creating your account. Please try again.");
     } finally {
       setLoading(false);
     }

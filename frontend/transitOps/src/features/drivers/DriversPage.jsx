@@ -29,7 +29,7 @@ export default function DriversPage() {
       const data = await res.json();
       
       // Map properties to fit the table UI (which uses some mock UI properties)
-      const formatted = (Array.isArray(data) ? data : []).map(d => {
+      const formatted = (Array.isArray(data.data) ? data.data : []).map(d => {
         const nameParts = (d.name || "Unknown").split(" ");
         const initials = nameParts.map(n => n[0]).join("").substring(0, 2).toUpperCase();
         

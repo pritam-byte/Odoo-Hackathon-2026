@@ -21,13 +21,20 @@ export default function LoginPage() {
 
     setLoading(true);
     try {
-      // TODO: replace with real API call once backend team gives the endpoint
-      // const res = await authService.login({ email, password });
-      // localStorage.setItem("token", res.data.token);
-      await new Promise((res) => setTimeout(res, 800)); // temp mock delay
+      const res = await fetch("http://localhost:5001/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Invalid credentials");
+
+      localStorage.setItem("token", data.data.token);
+      localStorage.setItem("user", JSON.stringify(data.data.user));
+
       navigate("/dashboard");
     } catch (err) {
-      setError("Invalid email or password.");
+      setError(err.message || "Invalid email or password.");
     } finally {
       setLoading(false);
     }
