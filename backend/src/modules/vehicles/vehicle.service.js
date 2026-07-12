@@ -1,33 +1,99 @@
-const router = require("express").Router();
+const prisma = require("../../config/prisma");
+const ApiError = require("../../utils/api-error");
 
-const controller = require("./auth.controller");
-const {
-  registerSchema,
-  loginSchema,
-} = require("./auth.validation");
+const createVehicle = async (data) => {
+  return prisma.vehicle.create({
+    data,
+  });
+};
 
-const {
-  validateBody,
-} = require("../../middleware/validate.middleware");
+const getVehicles = async ({ status, type, region, search }) => {
+  return prisma.vehicle.findMany({
+    where: {
+      ...(status && { status }),
 
-const {
-  requireAuth,
-} = require("../../middleware/auth.middleware");
+      ...(type && { type }),
 
-router.post(
-  "/register",
-  validateBody(registerSchema),
-  controller.register
-);
+      ...(region && {
+        region: {
+          equals: region,
+          mode: "insensitive",
+        },
+      }),
 
-router.post(
-  "/login",
-  validateBody(loginSchema),
-  controller.login
-);
+      ...(search && {
+        OR: [
+          {
+            registrationNo: {
+              contains: search,
+              mode: "insensitive",
+            },
+          },
+          {
+            name: {
+              contains: search,
+              mode: "insensitive",
+            },
+          },
+          {
+            model: {
+              contains: search,
+              mode: "insensitive",
+            },
+          },
+        ],
+      }),
+    },
 
-router.post("/logout", controller.logout);
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+};
 
-router.get("/me", requireAuth, controller.me);
+const getVehicle = async (id) => {
+  const vehicle = await prisma.vehicle.findUnique({
+    where: { id },
+  });
 
-module.exports = router;
+  if (!vehicle) {
+    throw new ApiError(404, "Vehicle not found.");
+  }
+
+  return vehicle;
+};
+
+const updateVehicle = async (id, data) => {
+  await getVehicle(id);
+
+  return prisma.vehicle.update({
+    where: { id },
+    data,
+  });
+};
+
+const deleteVehicle = async (id) => {
+  const vehicle = await getVehicle(id);
+
+  if (
+    vehicle.status === "ON_TRIP" ||
+    vehicle.status === "IN_SHOP"
+  ) {
+    throw new ApiError(
+      400,
+      "On-trip or in-shop vehicles cannot be deleted."
+    );
+  }
+
+  return prisma.vehicle.delete({
+    where: { id },
+  });
+};
+
+module.exports = {
+  createVehicle,
+  getVehicles,
+  getVehicle,
+  updateVehicle,
+  deleteVehicle,
+};
