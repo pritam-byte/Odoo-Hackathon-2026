@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import heroImg from "../assets/hero.png";
+import { authService } from "../services/authService";
 
 const ROLES = [
   { value: "ADMIN", label: "Admin — System Oversight" },
@@ -47,16 +48,14 @@ export default function SignupPage() {
 
     setLoading(true);
     try {
-      // TODO: replace with real API call once backend team gives the endpoint
-      // await authService.signup({ name, email, password, role });
-      await new Promise((res) => setTimeout(res, 800)); // temp mock delay
+      await authService.register({ name, email, password, role });
 
       setSuccess(true);
       setTimeout(() => {
         navigate("/", { state: { signupEmail: email } });
       }, 1200);
     } catch (err) {
-      setError("Something went wrong while creating your account. Please try again.");
+      setError(err.message || "Something went wrong while creating your account. Please try again.");
     } finally {
       setLoading(false);
     }

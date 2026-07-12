@@ -1,6 +1,7 @@
 import { useNavigate, Link } from "react-router-dom";
 import { useState } from "react";
 import heroImg from "../assets/hero.png";
+import { authService } from "../services/authService";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -21,13 +22,10 @@ export default function LoginPage() {
 
     setLoading(true);
     try {
-      // TODO: replace with real API call once backend team gives the endpoint
-      // const res = await authService.login({ email, password });
-      // localStorage.setItem("token", res.data.token);
-      await new Promise((res) => setTimeout(res, 800)); // temp mock delay
+      await authService.login({ email, password });
       navigate("/dashboard");
     } catch (err) {
-      setError("Invalid email or password.");
+      setError(err.message || "Invalid email or password.");
     } finally {
       setLoading(false);
     }
