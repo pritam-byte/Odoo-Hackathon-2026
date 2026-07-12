@@ -1,7 +1,8 @@
 import { useNavigate, Link } from "react-router-dom";
 import { useState } from "react";
-import heroImg from "../assets/hero.png";
-import { useAuth } from "../context/AuthContext";
+
+import { authService } from "../services/authService";
+
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -49,12 +50,12 @@ export default function LoginPage() {
         </div>
 
         <div className="z-10 flex justify-center">
-          <img
-            src={heroImg}
-            alt="Fleet of vans"
-            className="max-w-full h-auto"
-          />
-        </div>
+  <img
+    src="https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&w=800&q=80"
+    alt="Fleet of delivery vans"
+    className="max-w-full h-auto rounded-xl"
+  />
+</div>
       </div>
 
       {/* Right form panel */}
