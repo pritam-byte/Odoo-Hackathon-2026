@@ -1,3 +1,4 @@
+// src/App.jsx
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import LoginPage from "./pages/LoginPage";
 import DashboardLayout from "./components/layout/DashboardLayout";
@@ -7,6 +8,8 @@ import DriversPage from "./features/drivers/DriversPage";
 import CreateTripPage from "./features/trips/CreateTripPage";
 import ExpensesPage from "./features/expenses/ExpensesPage";
 import MaintenancePage from "./features/maintenance/MaintenancePage";
+// ADD THIS IMPORT
+import ReportsPage from "./features/reports/ReportsPage"; 
 
 function App() {
   return (
@@ -21,6 +24,8 @@ function App() {
           <Route path="/trips" element={<CreateTripPage />} />
           <Route path="/fuel" element={<ExpensesPage />} />
           <Route path="/maintenance" element={<MaintenancePage />} />
+          {/* ADD THIS ROUTE */}
+          <Route path="/reports" element={<ReportsPage />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" />} />
