@@ -1,7 +1,7 @@
 import { useNavigate, Link } from "react-router-dom";
 import { useState } from "react";
 import heroImg from "../assets/hero.png";
-import { authService } from "../services/authService";
+import { useAuth } from "../context/AuthContext";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -10,6 +10,7 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -22,7 +23,7 @@ export default function LoginPage() {
 
     setLoading(true);
     try {
-      await authService.login({ email, password });
+      await login(email, password);
       navigate("/dashboard");
     } catch (err) {
       setError(err.message || "Invalid email or password.");
