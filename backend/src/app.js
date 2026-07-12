@@ -1,8 +1,8 @@
 const express = require("express");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
-
 const vehicleRoutes = require("./modules/vehicles/vehicle.routes");
+const authRoutes = require("./modules/auth/auth.routes");
 const driverRoutes = require("./modules/drivers/driver.routes");
 const tripRoutes = require("./modules/trips/trip.routes");
 const maintenanceRoutes = require("./modules/maintenance/maintenance.routes");
@@ -40,6 +40,7 @@ app.use("/api/fuel-logs", fuelRoutes);
 app.use("/api/expenses", expenseRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/reports", reportRoutes);
+app.use("/api/auth", authRoutes);
 
 app.use(errorHandler);
 
