@@ -4,4 +4,8 @@ node_modules/
 !.env.example
 dist/
 build/
+<<<<<<< HEAD
 .DS_Store
+=======
+.DS_Store
+>>>>>>> 31ce141734be466033b7f26657ce508d39316e06
