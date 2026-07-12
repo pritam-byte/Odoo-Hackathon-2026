@@ -1,42 +1,41 @@
-import dotenv from "dotenv"
-import express from "express"
-import cors from "cors"
-import pool from "./config/db.js";
-
+import dotenv from "dotenv";
+import express from "express";
+import cors from "cors";
 import errorHandling from "./midllewares/errorHandler.js";
 
-import userRoutes from "./routes/userRoutes.js";
+// Routes
+import authRoutes from "./routes/authRoutes.js";
+import vehicleRoutes from "./routes/vehicleRoutes.js";
+import driverRoutes from "./routes/driverRoutes.js";
+import tripRoutes from "./routes/tripRoutes.js";
+import maintenanceRoutes from "./routes/maintenanceRoutes.js";
+import dashboardRoutes from "./routes/dashboardRoutes.js";
 
-
-
-dotenv.config()
+dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 3001;
 
-
-//middlewares
+// Middlewares
 app.use(express.json());
 app.use(cors());
 
-//Routes
-app.use("/api", userRoutes)
+// API Routes
+app.use("/api/auth", authRoutes);
+app.use("/api/vehicles", vehicleRoutes);
+app.use("/api/drivers", driverRoutes);
+app.use("/api/trips", tripRoutes);
+app.use("/api/maintenance", maintenanceRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 
-//Error handling middleware
+// Error handling middleware
 app.use(errorHandling);
 
-//Testing POSTGRES Connection
-app.get(("/"), async (req, res) => {
-    console.log("Start");
-    const result = await pool.query("SELECT current_database()");
-    console.log("end");
-    res.send(`The database name is : ${result.rows[0].current_database}`);
-
+app.get("/", (req, res) => {
+    res.send("Fleet Management API is running!");
 });
 
-
-
-//Server running
+// Server running
 app.listen(port, () => {
     console.log(`Server is listening on http://localhost:${port}`);
-});
+});

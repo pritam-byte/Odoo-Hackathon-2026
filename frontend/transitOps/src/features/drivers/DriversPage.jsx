@@ -1,34 +1,89 @@
-// src/features/drivers/DriversPage.jsx
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Search, Filter, Plus } from "lucide-react";
 import DriverTable from "./DriverTable";
-
-// Mock data matching the screenshot
-const MOCK_DRIVERS = [
-  { id: 1, initials: "JD", name: "John Davis", license: "D1234567", category: "Class B", expiry: "2026-06-15", score: 92, status: "Available", color: "bg-blue-100 text-blue-700", warning: false },
-  { id: 2, initials: "SM", name: "Sarah Martinez", license: "D2345678", category: "Class B", expiry: "2025-08-02", score: 88, status: "On Trip", color: "bg-purple-100 text-purple-700", warning: true },
-  { id: 3, initials: "RW", name: "Robert Wilson", license: "D3456789", category: "Class A", expiry: "2025-06-05", score: 72, status: "Available", color: "bg-green-100 text-green-700", warning: true },
-  { id: 4, initials: "JL", name: "Jessica Lee", license: "D4567890", category: "Class B", expiry: "2025-06-01", score: 68, status: "On Trip", color: "bg-amber-100 text-amber-700", warning: true },
-  { id: 5, initials: "DM", name: "David Miller", license: "D5678901", category: "Class A", expiry: "2025-05-25", score: 54, status: "Suspended", color: "bg-red-100 text-red-700", warning: true },
-  { id: 6, initials: "KW", name: "Karen White", license: "D6789012", category: "Class B", expiry: "2026-07-20", score: 90, status: "Available", color: "bg-teal-100 text-teal-700", warning: false },
-];
+import DriverFormModal from "./DriverFormModal";
 
 const STATUSES = ["Status", "Available", "On Trip", "Suspended"];
 const CATEGORIES = ["License Category", "Class A", "Class B", "Class C"];
 
 export default function DriversPage() {
+  const [drivers, setDrivers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("Status");
   const [category, setCategory] = useState("License Category");
 
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  useEffect(() => {
+    fetchDrivers();
+  }, []);
+
+  const fetchDrivers = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch("http://localhost:5001/api/drivers");
+      if (!res.ok) throw new Error("Failed to fetch drivers");
+      const data = await res.json();
+      
+      // Map properties to fit the table UI (which uses some mock UI properties)
+      const formatted = (Array.isArray(data) ? data : []).map(d => {
+        const nameParts = (d.name || "Unknown").split(" ");
+        const initials = nameParts.map(n => n[0]).join("").substring(0, 2).toUpperCase();
+        
+        return {
+          ...d,
+          initials,
+          score: d.score || 100, // default if not provided
+          color: d.color || "bg-blue-100 text-blue-700",
+          status: d.status || "Available",
+          warning: d.warning || false
+        };
+      });
+      setDrivers(formatted);
+    } catch (err) {
+      console.error(err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddDriver = async (formData) => {
+    try {
+      const res = await fetch("http://localhost:5001/api/drivers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: formData.name,
+          licenseNumber: formData.license,
+          licenseCategory: formData.category,
+          licenseExpiryDate: formData.expiry,
+          contactNumber: formData.contactNumber
+        }),
+      });
+      if (!res.ok) throw new Error("Failed to add driver");
+      
+      setIsModalOpen(false);
+      fetchDrivers(); // Refresh list
+    } catch (err) {
+      console.error(err);
+      alert("Error adding driver: " + err.message);
+    }
+  };
+
   const filtered = useMemo(() => {
-    return MOCK_DRIVERS.filter((d) => {
-      const matchesSearch = d.name.toLowerCase().includes(search.toLowerCase()) || d.license.toLowerCase().includes(search.toLowerCase());
+    return drivers.filter((d) => {
+      const dName = d.name || "";
+      const dLicense = d.license || d.licenseNumber || "";
+      const matchesSearch = dName.toLowerCase().includes(search.toLowerCase()) || dLicense.toLowerCase().includes(search.toLowerCase());
       const matchesStatus = status === "Status" || d.status === status;
       const matchesCategory = category === "License Category" || d.category === category;
       return matchesSearch && matchesStatus && matchesCategory;
     });
-  }, [search, status, category]);
+  }, [drivers, search, status, category]);
 
   const clearFilters = () => {
     setSearch("");
@@ -38,14 +93,24 @@ export default function DriversPage() {
 
   return (
     <div>
+      <DriverFormModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        onSubmit={handleAddDriver} 
+      />
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <h1 className="text-3xl font-bold text-slate-900">Drivers</h1>
-        <button className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2.5 rounded-lg transition">
+        <button 
+          onClick={() => setIsModalOpen(true)}
+          className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2.5 rounded-lg transition"
+        >
           <Plus size={18} />
           Add Driver
         </button>
       </div>
+
+      {error && <div className="mb-4 text-red-600 bg-red-50 p-3 rounded-lg border border-red-200">{error}</div>}
 
       {/* Filters Bar */}
       <div className="flex flex-col lg:flex-row gap-3 mb-6">
@@ -91,7 +156,11 @@ export default function DriversPage() {
 
       {/* Table Card */}
       <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-        <DriverTable data={filtered} />
+        {loading ? (
+          <div className="py-16 text-center text-slate-500">Loading drivers...</div>
+        ) : (
+          <DriverTable data={filtered} />
+        )}
       </div>
     </div>
   );
