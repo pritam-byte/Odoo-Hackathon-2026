@@ -2,22 +2,8 @@
 import { useState, useMemo } from "react";
 import { MapPin, Truck, User, Package, Route, Scale, Send } from "lucide-react";
 import CapacityPanel from "./CapacityPanel";
-
-const MOCK_VEHICLES = [
-  { id: 1, name: "Van-05", capacity: 500 },
-  { id: 2, name: "Van-12", capacity: 750 },
-  { id: 3, name: "Truck-03", capacity: 2000 },
-];
-
-// 1. Sync this data to match the drivers page, including the status
-const MOCK_DRIVERS = [
-  { id: 1, name: "John Davis", status: "Available" },
-  { id: 2, name: "Sarah Martinez", status: "On Trip" },
-  { id: 3, name: "Robert Wilson", status: "Available" },
-  { id: 4, name: "Jessica Lee", status: "On Trip" },
-  { id: 5, name: "David Miller", status: "Suspended" },
-  { id: 6, name: "Karen White", status: "Available" },
-];
+import { useFleet } from "../../context/FleetContext";
+import { parseCapacityKg } from "../vehicles/capacityUtils";
 
 const MOCK_LOCATIONS = [
   "Warehouse A, 123 Industrial Rd, Metro City",
@@ -26,6 +12,8 @@ const MOCK_LOCATIONS = [
 ];
 
 export default function CreateTripPage() {
+  const { vehicles, drivers, dispatchTrip } = useFleet();
+
   const [source, setSource] = useState("");
   const [destination, setDestination] = useState("");
   const [vehicleId, setVehicleId] = useState("");
@@ -36,11 +24,20 @@ export default function CreateTripPage() {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  const selectedVehicle = useMemo(
-    () => MOCK_VEHICLES.find((v) => String(v.id) === String(vehicleId)),
-    [vehicleId]
+  const availableVehicles = useMemo(
+    () => vehicles.filter((v) => v.status === "Available"),
+    [vehicles]
   );
-  const maxCapacity = selectedVehicle?.capacity || 500;
+  const availableDrivers = useMemo(
+    () => drivers.filter((d) => d.status === "Available"),
+    [drivers]
+  );
+
+  const selectedVehicle = useMemo(
+    () => vehicles.find((v) => String(v.id) === String(vehicleId)),
+    [vehicles, vehicleId]
+  );
+  const maxCapacity = selectedVehicle ? parseCapacityKg(selectedVehicle.maxLoad) : 500;
 
   const handleCapacityCheck = () => {
     const weight = Number(cargoWeight) || 0;
@@ -49,7 +46,7 @@ export default function CreateTripPage() {
       return;
     }
     if (weight > maxCapacity) {
-      setError(`Cargo exceeds ${selectedVehicle?.name || "vehicle"}'s ${maxCapacity} kg capacity.`);
+      setError(`Cargo exceeds ${selectedVehicle?.regNo || "vehicle"}'s ~${maxCapacity} kg capacity.`);
     } else {
       setError("");
     }
@@ -71,6 +68,7 @@ export default function CreateTripPage() {
     setSubmitting(true);
     try {
       await new Promise((res) => setTimeout(res, 700));
+      dispatchTrip({ source, destination, vehicleId, driverId });
       setStage("dispatched");
     } catch {
       setError("Failed to dispatch trip. Please try again.");
@@ -133,15 +131,16 @@ export default function CreateTripPage() {
                   onChange={(e) => setVehicleId(e.target.value)}
                   className="w-full pl-10 pr-3 py-3 border border-slate-300 rounded-lg text-sm outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 bg-white appearance-none"
                 >
-                  <option value="">Select a vehicle</option>
-                  {MOCK_VEHICLES.map((v) => (
-                    <option key={v.id} value={v.id}>{v.name}</option>
+                  <option value="">
+                    {availableVehicles.length === 0 ? "No vehicles available" : "Select a vehicle"}
+                  </option>
+                  {availableVehicles.map((v) => (
+                    <option key={v.id} value={v.id}>{v.regNo} — {v.model}</option>
                   ))}
                 </select>
               </div>
             </div>
 
-            {/* DRIVER DROPDOWN UPDATE */}
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">Available Driver</label>
               <div className="relative">
@@ -151,9 +150,10 @@ export default function CreateTripPage() {
                   onChange={(e) => setDriverId(e.target.value)}
                   className="w-full pl-10 pr-3 py-3 border border-slate-300 rounded-lg text-sm outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 bg-white appearance-none"
                 >
-                  <option value="">Select a driver</option>
-                  {/* 2. Filter the array to ONLY map over Available drivers */}
-                  {MOCK_DRIVERS.filter((d) => d.status === "Available").map((d) => (
+                  <option value="">
+                    {availableDrivers.length === 0 ? "No drivers available" : "Select a driver"}
+                  </option>
+                  {availableDrivers.map((d) => (
                     <option key={d.id} value={d.id}>{d.name}</option>
                   ))}
                 </select>
