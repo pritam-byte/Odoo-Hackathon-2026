@@ -1,19 +1,9 @@
+// src/features/trips/CreateTripPage.jsx
 import { useState, useMemo } from "react";
 import { MapPin, Truck, User, Package, Route, Scale, Send } from "lucide-react";
 import CapacityPanel from "./CapacityPanel";
-
-// TODO: replace with real data from backend team's /vehicles and /drivers endpoints
-const MOCK_VEHICLES = [
-  { id: 1, name: "Van-05", capacity: 500 },
-  { id: 2, name: "Van-12", capacity: 750 },
-  { id: 3, name: "Truck-03", capacity: 2000 },
-];
-
-const MOCK_DRIVERS = [
-  { id: 1, name: "Alex" },
-  { id: 2, name: "Priya" },
-  { id: 3, name: "Sam" },
-];
+import { useFleet } from "../../context/FleetContext";
+import { parseCapacityKg } from "../vehicles/capacityUtils";
 
 const MOCK_LOCATIONS = [
   "Warehouse A, 123 Industrial Rd, Metro City",
@@ -22,6 +12,8 @@ const MOCK_LOCATIONS = [
 ];
 
 export default function CreateTripPage() {
+  const { vehicles, drivers, dispatchTrip } = useFleet();
+
   const [source, setSource] = useState("");
   const [destination, setDestination] = useState("");
   const [vehicleId, setVehicleId] = useState("");
@@ -32,11 +24,20 @@ export default function CreateTripPage() {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  const selectedVehicle = useMemo(
-    () => MOCK_VEHICLES.find((v) => String(v.id) === String(vehicleId)),
-    [vehicleId]
+  const availableVehicles = useMemo(
+    () => vehicles.filter((v) => v.status === "Available"),
+    [vehicles]
   );
-  const maxCapacity = selectedVehicle?.capacity || 500;
+  const availableDrivers = useMemo(
+    () => drivers.filter((d) => d.status === "Available"),
+    [drivers]
+  );
+
+  const selectedVehicle = useMemo(
+    () => vehicles.find((v) => String(v.id) === String(vehicleId)),
+    [vehicles, vehicleId]
+  );
+  const maxCapacity = selectedVehicle ? parseCapacityKg(selectedVehicle.maxLoad) : 500;
 
   const handleCapacityCheck = () => {
     const weight = Number(cargoWeight) || 0;
@@ -45,7 +46,7 @@ export default function CreateTripPage() {
       return;
     }
     if (weight > maxCapacity) {
-      setError(`Cargo exceeds ${selectedVehicle?.name || "vehicle"}'s ${maxCapacity} kg capacity.`);
+      setError(`Cargo exceeds ${selectedVehicle?.regNo || "vehicle"}'s ~${maxCapacity} kg capacity.`);
     } else {
       setError("");
     }
@@ -66,9 +67,8 @@ export default function CreateTripPage() {
 
     setSubmitting(true);
     try {
-      // TODO: replace with real API call once backend team's /trips endpoint is ready
-      // await tripService.createTrip({ source, destination, vehicleId, driverId, cargoWeight, distance });
       await new Promise((res) => setTimeout(res, 700));
+      dispatchTrip({ source, destination, vehicleId, driverId });
       setStage("dispatched");
     } catch {
       setError("Failed to dispatch trip. Please try again.");
@@ -82,7 +82,6 @@ export default function CreateTripPage() {
       <h1 className="text-3xl font-bold text-slate-900 mb-6">Create Trip</h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left: form */}
         <div className="lg:col-span-2 bg-white border border-slate-200 rounded-xl p-6 sm:p-8">
           <span className="inline-flex items-center gap-1.5 px-3 py-1 mb-6 rounded-md bg-blue-50 text-blue-700 text-sm font-medium">
             📄 {stage === "draft" ? "Draft" : stage === "dispatched" ? "Dispatched" : "Completed"}
@@ -132,9 +131,11 @@ export default function CreateTripPage() {
                   onChange={(e) => setVehicleId(e.target.value)}
                   className="w-full pl-10 pr-3 py-3 border border-slate-300 rounded-lg text-sm outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 bg-white appearance-none"
                 >
-                  <option value="">Select a vehicle</option>
-                  {MOCK_VEHICLES.map((v) => (
-                    <option key={v.id} value={v.id}>{v.name}</option>
+                  <option value="">
+                    {availableVehicles.length === 0 ? "No vehicles available" : "Select a vehicle"}
+                  </option>
+                  {availableVehicles.map((v) => (
+                    <option key={v.id} value={v.id}>{v.regNo} — {v.model}</option>
                   ))}
                 </select>
               </div>
@@ -149,8 +150,10 @@ export default function CreateTripPage() {
                   onChange={(e) => setDriverId(e.target.value)}
                   className="w-full pl-10 pr-3 py-3 border border-slate-300 rounded-lg text-sm outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 bg-white appearance-none"
                 >
-                  <option value="">Select a driver</option>
-                  {MOCK_DRIVERS.map((d) => (
+                  <option value="">
+                    {availableDrivers.length === 0 ? "No drivers available" : "Select a driver"}
+                  </option>
+                  {availableDrivers.map((d) => (
                     <option key={d.id} value={d.id}>{d.name}</option>
                   ))}
                 </select>
@@ -213,7 +216,6 @@ export default function CreateTripPage() {
           </form>
         </div>
 
-        {/* Right: capacity + stepper */}
         <div>
           <CapacityPanel cargoWeight={cargoWeight} maxCapacity={maxCapacity} stage={stage} />
         </div>

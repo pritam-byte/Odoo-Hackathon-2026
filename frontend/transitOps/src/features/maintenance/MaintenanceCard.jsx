@@ -36,24 +36,24 @@ export default function MaintenanceCard({ record, highlighted = false }) {
           <span className="text-slate-800 font-medium">{record.serviceType}</span>
         </div>
         <div className="flex justify-between">
-          <span className="text-slate-500">Opened Date</span>
-          <span className="text-slate-800 font-medium">{record.openedDate}</span>
+          <span className="text-slate-500">Service Date</span>
+          <span className="text-slate-800 font-medium">{record.serviceDate}</span>
         </div>
         <div className="flex justify-between">
           <span className="text-slate-500">Estimated Cost</span>
           <span className="text-slate-800 font-medium">
-            ${record.estimatedCost.toFixed(2)}
+            ${Number(record.estimatedCost).toFixed(2)}
           </span>
         </div>
       </div>
 
-      {record.status === "in_progress" && (
+      {record.status === "in_shop" && record.subStatus === "in_progress" && (
         <div className="flex items-center gap-1.5 text-blue-600 text-sm font-medium mt-3 pt-3 border-t border-slate-100">
           <Clock size={15} />
           In Progress
         </div>
       )}
-      {record.status === "technician_assigned" && (
+      {record.status === "in_shop" && record.subStatus === "technician_assigned" && (
         <div className="flex items-center gap-1.5 text-orange-600 text-sm font-medium mt-3 pt-3 border-t border-slate-100">
           <Wrench size={15} />
           Technician Assigned
