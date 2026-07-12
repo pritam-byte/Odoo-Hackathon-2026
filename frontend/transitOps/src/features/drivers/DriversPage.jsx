@@ -1,9 +1,9 @@
 // src/features/drivers/DriversPage.jsx
 import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom"; // 1. Add this import
 import { Search, Filter, Plus } from "lucide-react";
 import DriverTable from "./DriverTable";
 
-// Mock data matching the screenshot
 const MOCK_DRIVERS = [
   { id: 1, initials: "JD", name: "John Davis", license: "D1234567", category: "Class B", expiry: "2026-06-15", score: 92, status: "Available", color: "bg-blue-100 text-blue-700", warning: false },
   { id: 2, initials: "SM", name: "Sarah Martinez", license: "D2345678", category: "Class B", expiry: "2025-08-02", score: 88, status: "On Trip", color: "bg-purple-100 text-purple-700", warning: true },
@@ -17,6 +17,7 @@ const STATUSES = ["Status", "Available", "On Trip", "Suspended"];
 const CATEGORIES = ["License Category", "Class A", "Class B", "Class C"];
 
 export default function DriversPage() {
+  const navigate = useNavigate(); // 2. Initialize the hook
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("Status");
   const [category, setCategory] = useState("License Category");
@@ -38,16 +39,19 @@ export default function DriversPage() {
 
   return (
     <div>
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <h1 className="text-3xl font-bold text-slate-900">Drivers</h1>
-        <button className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2.5 rounded-lg transition">
+        
+        {/* 3. Add onClick to trigger the redirect */}
+        <button 
+          onClick={() => navigate('/trips')} 
+          className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2.5 rounded-lg transition"
+        >
           <Plus size={18} />
           Add Driver
         </button>
       </div>
 
-      {/* Filters Bar */}
       <div className="flex flex-col lg:flex-row gap-3 mb-6">
         <div className="relative flex-1 min-w-[220px]">
           <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -89,7 +93,6 @@ export default function DriversPage() {
         </button>
       </div>
 
-      {/* Table Card */}
       <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
         <DriverTable data={filtered} />
       </div>

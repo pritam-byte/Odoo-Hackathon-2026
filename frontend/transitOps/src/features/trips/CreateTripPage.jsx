@@ -1,18 +1,22 @@
+// src/features/trips/CreateTripPage.jsx
 import { useState, useMemo } from "react";
 import { MapPin, Truck, User, Package, Route, Scale, Send } from "lucide-react";
 import CapacityPanel from "./CapacityPanel";
 
-// TODO: replace with real data from backend team's /vehicles and /drivers endpoints
 const MOCK_VEHICLES = [
   { id: 1, name: "Van-05", capacity: 500 },
   { id: 2, name: "Van-12", capacity: 750 },
   { id: 3, name: "Truck-03", capacity: 2000 },
 ];
 
+// 1. Sync this data to match the drivers page, including the status
 const MOCK_DRIVERS = [
-  { id: 1, name: "Alex" },
-  { id: 2, name: "Priya" },
-  { id: 3, name: "Sam" },
+  { id: 1, name: "John Davis", status: "Available" },
+  { id: 2, name: "Sarah Martinez", status: "On Trip" },
+  { id: 3, name: "Robert Wilson", status: "Available" },
+  { id: 4, name: "Jessica Lee", status: "On Trip" },
+  { id: 5, name: "David Miller", status: "Suspended" },
+  { id: 6, name: "Karen White", status: "Available" },
 ];
 
 const MOCK_LOCATIONS = [
@@ -66,8 +70,6 @@ export default function CreateTripPage() {
 
     setSubmitting(true);
     try {
-      // TODO: replace with real API call once backend team's /trips endpoint is ready
-      // await tripService.createTrip({ source, destination, vehicleId, driverId, cargoWeight, distance });
       await new Promise((res) => setTimeout(res, 700));
       setStage("dispatched");
     } catch {
@@ -82,7 +84,6 @@ export default function CreateTripPage() {
       <h1 className="text-3xl font-bold text-slate-900 mb-6">Create Trip</h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left: form */}
         <div className="lg:col-span-2 bg-white border border-slate-200 rounded-xl p-6 sm:p-8">
           <span className="inline-flex items-center gap-1.5 px-3 py-1 mb-6 rounded-md bg-blue-50 text-blue-700 text-sm font-medium">
             📄 {stage === "draft" ? "Draft" : stage === "dispatched" ? "Dispatched" : "Completed"}
@@ -140,6 +141,7 @@ export default function CreateTripPage() {
               </div>
             </div>
 
+            {/* DRIVER DROPDOWN UPDATE */}
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">Available Driver</label>
               <div className="relative">
@@ -150,7 +152,8 @@ export default function CreateTripPage() {
                   className="w-full pl-10 pr-3 py-3 border border-slate-300 rounded-lg text-sm outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 bg-white appearance-none"
                 >
                   <option value="">Select a driver</option>
-                  {MOCK_DRIVERS.map((d) => (
+                  {/* 2. Filter the array to ONLY map over Available drivers */}
+                  {MOCK_DRIVERS.filter((d) => d.status === "Available").map((d) => (
                     <option key={d.id} value={d.id}>{d.name}</option>
                   ))}
                 </select>
@@ -213,7 +216,6 @@ export default function CreateTripPage() {
           </form>
         </div>
 
-        {/* Right: capacity + stepper */}
         <div>
           <CapacityPanel cargoWeight={cargoWeight} maxCapacity={maxCapacity} stage={stage} />
         </div>
