@@ -1,8 +1,11 @@
+// src/App.jsx
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import LoginPage from "./pages/LoginPage";
 import DashboardLayout from "./components/layout/DashboardLayout";
 import DashboardPage from "./pages/DashboardPage";
 import VehiclesPage from "./features/vehicles/VehiclesPage";
+// ADD THIS IMPORT
+import DriversPage from "./features/drivers/DriversPage"; 
 
 function App() {
   return (
@@ -10,10 +13,11 @@ function App() {
       <Routes>
         <Route path="/" element={<LoginPage />} />
         
-        {/* Protected Routes wrapped in the Layout */}
         <Route element={<DashboardLayout />}>
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/vehicles" element={<VehiclesPage />} />
+          {/* ADD THIS ROUTE */}
+          <Route path="/drivers" element={<DriversPage />} /> 
         </Route>
 
         <Route path="*" element={<Navigate to="/" />} />
