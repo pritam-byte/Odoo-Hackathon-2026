@@ -1,12 +1,6 @@
-const express = require("express");
+const router = require("express").Router();
 
-const {
-  register,
-  login,
-  logout,
-  me,
-} = require("./auth.controller");
-
+const controller = require("./auth.controller");
 const {
   registerSchema,
   loginSchema,
@@ -20,29 +14,20 @@ const {
   requireAuth,
 } = require("../../middleware/auth.middleware");
 
-const router = express.Router();
-
 router.post(
   "/register",
   validateBody(registerSchema),
-  register
+  controller.register
 );
 
 router.post(
   "/login",
   validateBody(loginSchema),
-  login
+  controller.login
 );
 
-router.post(
-  "/logout",
-  logout
-);
+router.post("/logout", controller.logout);
 
-router.get(
-  "/me",
-  requireAuth,
-  me
-);
+router.get("/me", requireAuth, controller.me);
 
 module.exports = router;

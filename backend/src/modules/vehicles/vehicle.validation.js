@@ -1,23 +1,33 @@
-const allowRoles = (...allowedRoles) => {
-  return (req, res, next) => {
-    if (!req.user) {
-      return res.status(401).json({
-        success: false,
-        message: "Authentication required.",
-      });
-    }
+const router = require("express").Router();
 
-    if (!allowedRoles.includes(req.user.role)) {
-      return res.status(403).json({
-        success: false,
-        message: "You do not have permission for this action.",
-      });
-    }
+const controller = require("./auth.controller");
+const {
+  registerSchema,
+  loginSchema,
+} = require("./auth.validation");
 
-    next();
-  };
-};
+const {
+  validateBody,
+} = require("../../middleware/validate.middleware");
 
-module.exports = {
-  allowRoles,
-};
+const {
+  requireAuth,
+} = require("../../middleware/auth.middleware");
+
+router.post(
+  "/register",
+  validateBody(registerSchema),
+  controller.register
+);
+
+router.post(
+  "/login",
+  validateBody(loginSchema),
+  controller.login
+);
+
+router.post("/logout", controller.logout);
+
+router.get("/me", requireAuth, controller.me);
+
+module.exports = router;

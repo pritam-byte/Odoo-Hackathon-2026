@@ -7,16 +7,14 @@ const requireAuth = (req, res, next) => {
     if (!token) {
       return res.status(401).json({
         success: false,
-        message: "Authentication required. Please log in.",
+        message: "Authentication required.",
       });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-    req.user = decoded;
+    req.user = jwt.verify(token, process.env.JWT_SECRET);
 
     next();
-  } catch (error) {
+  } catch {
     return res.status(401).json({
       success: false,
       message: "Invalid or expired authentication token.",

@@ -1,12 +1,6 @@
-const express = require("express");
+const router = require("express").Router();
 
-const {
-  create,
-  getAll,
-  getOne,
-  update,
-  remove,
-} = require("./vehicle.controller");
+const controller = require("./vehicle.controller");
 
 const {
   createVehicleSchema,
@@ -25,41 +19,30 @@ const {
   allowRoles,
 } = require("../../middleware/role.middleware");
 
-const router = express.Router();
+router.use(requireAuth);
 
-router.get(
-  "/",
-  requireAuth,
-  getAll
-);
+router.get("/", controller.getAll);
 
-router.get(
-  "/:id",
-  requireAuth,
-  getOne
-);
+router.get("/:id", controller.getOne);
 
 router.post(
   "/",
-  requireAuth,
   allowRoles("ADMIN", "FLEET_MANAGER"),
   validateBody(createVehicleSchema),
-  create
+  controller.create
 );
 
 router.patch(
   "/:id",
-  requireAuth,
   allowRoles("ADMIN", "FLEET_MANAGER"),
   validateBody(updateVehicleSchema),
-  update
+  controller.update
 );
 
 router.delete(
   "/:id",
-  requireAuth,
   allowRoles("ADMIN", "FLEET_MANAGER"),
-  remove
+  controller.remove
 );
 
 module.exports = router;

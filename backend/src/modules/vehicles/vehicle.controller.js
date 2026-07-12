@@ -1,89 +1,57 @@
-const {
-  createVehicle,
-  getVehicles,
-  getVehicleById,
-  updateVehicle,
-  deleteVehicle,
-} = require("./vehicle.service");
+const asyncHandler = require("../../utils/async-handler");
+const vehicleService = require("./vehicle.service");
 
-const create = async (req, res, next) => {
-  try {
-    const vehicle = await createVehicle(req.body);
+const create = asyncHandler(async (req, res) => {
+  const vehicle = await vehicleService.createVehicle(req.body);
 
-    return res.status(201).json({
-      success: true,
-      message: "Vehicle created successfully.",
-      data: {
-        vehicle,
-      },
-    });
-  } catch (error) {
-    next(error);
-  }
-};
+  res.status(201).json({
+    success: true,
+    message: "Vehicle created successfully.",
+    data: { vehicle },
+  });
+});
 
-const getAll = async (req, res, next) => {
-  try {
-    const vehicles = await getVehicles(req.query);
+const getAll = asyncHandler(async (req, res) => {
+  const vehicles = await vehicleService.getVehicles(req.query);
 
-    return res.status(200).json({
-      success: true,
-      total: vehicles.length,
-      data: {
-        vehicles,
-      },
-    });
-  } catch (error) {
-    next(error);
-  }
-};
+  res.json({
+    success: true,
+    total: vehicles.length,
+    data: { vehicles },
+  });
+});
 
-const getOne = async (req, res, next) => {
-  try {
-    const vehicle = await getVehicleById(req.params.id);
+const getOne = asyncHandler(async (req, res) => {
+  const vehicle = await vehicleService.getVehicle(req.params.id);
 
-    return res.status(200).json({
-      success: true,
-      data: {
-        vehicle,
-      },
-    });
-  } catch (error) {
-    next(error);
-  }
-};
+  res.json({
+    success: true,
+    data: { vehicle },
+  });
+});
 
-const update = async (req, res, next) => {
-  try {
-    const vehicle = await updateVehicle(req.params.id, req.body);
+const update = asyncHandler(async (req, res) => {
+  const vehicle = await vehicleService.updateVehicle(
+    req.params.id,
+    req.body
+  );
 
-    return res.status(200).json({
-      success: true,
-      message: "Vehicle updated successfully.",
-      data: {
-        vehicle,
-      },
-    });
-  } catch (error) {
-    next(error);
-  }
-};
+  res.json({
+    success: true,
+    message: "Vehicle updated successfully.",
+    data: { vehicle },
+  });
+});
 
-const remove = async (req, res, next) => {
-  try {
-    const vehicle = await deleteVehicle(req.params.id);
+const remove = asyncHandler(async (req, res) => {
+  const vehicle = await vehicleService.deleteVehicle(req.params.id);
 
-    return res.status(200).json({
-      success: true,
-      message: "Vehicle deleted successfully.",
-      data: {
-        vehicle,
-      },
-    });
-  } catch (error) {
-    next(error);
-  }
-};
+  res.json({
+    success: true,
+    message: "Vehicle deleted successfully.",
+    data: { vehicle },
+  });
+});
 
 module.exports = {
   create,

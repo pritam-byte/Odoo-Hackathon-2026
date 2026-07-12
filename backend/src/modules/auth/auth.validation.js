@@ -1,6 +1,6 @@
 const { z } = require("zod");
 
-const validRoles = [
+const roles = [
   "ADMIN",
   "FLEET_MANAGER",
   "DISPATCHER",
@@ -10,39 +10,19 @@ const validRoles = [
 ];
 
 const registerSchema = z.object({
-  name: z
-    .string()
-    .trim()
-    .min(2, "Name must contain at least 2 characters")
-    .max(100, "Name is too long"),
+  name: z.string().trim().min(2).max(100),
 
-  email: z
-    .string()
-    .trim()
-    .toLowerCase()
-    .email("Enter a valid email address"),
+  email: z.string().trim().toLowerCase().email(),
 
-  password: z
-    .string()
-    .min(6, "Password must contain at least 6 characters")
-    .max(100, "Password is too long"),
+  password: z.string().min(6).max(100),
 
-  role: z
-    .enum(validRoles)
-    .optional()
-    .default("FLEET_MANAGER"),
+  role: z.enum(roles).optional().default("DISPATCHER"),
 });
 
 const loginSchema = z.object({
-  email: z
-    .string()
-    .trim()
-    .toLowerCase()
-    .email("Enter a valid email address"),
+  email: z.string().trim().toLowerCase().email(),
 
-  password: z
-    .string()
-    .min(1, "Password is required"),
+  password: z.string().min(1),
 });
 
 module.exports = {

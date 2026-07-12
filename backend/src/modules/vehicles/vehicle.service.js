@@ -1,114 +1,33 @@
-const { randomUUID } = require("crypto");
+const router = require("express").Router();
 
-const store = require("../../data/memory.store");
+const controller = require("./auth.controller");
+const {
+  registerSchema,
+  loginSchema,
+} = require("./auth.validation");
 
-const createVehicle = async (vehicleData) => {
-  const existingVehicle = store.vehicles.find(
-    (vehicle) => vehicle.registrationNo === vehicleData.registrationNo
-  );
+const {
+  validateBody,
+} = require("../../middleware/validate.middleware");
 
-  if (existingVehicle) {
-    const error = new Error(
-      "A vehicle with this registration number already exists."
-    );
-    error.statusCode = 409;
-    throw error;
-  }
+const {
+  requireAuth,
+} = require("../../middleware/auth.middleware");
 
-  const newVehicle = {
-    id: randomUUID(),
-    ...vehicleData,
-    status: "AVAILABLE",
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
+router.post(
+  "/register",
+  validateBody(registerSchema),
+  controller.register
+);
 
-  store.vehicles.push(newVehicle);
+router.post(
+  "/login",
+  validateBody(loginSchema),
+  controller.login
+);
 
-  return newVehicle;
-};
+router.post("/logout", controller.logout);
 
-const getVehicles = async ({ status, type, region, search }) => {
-  let vehicles = [...store.vehicles];
+router.get("/me", requireAuth, controller.me);
 
-  if (status) {
-    vehicles = vehicles.filter((vehicle) => vehicle.status === status);
-  }
-
-  if (type) {
-    vehicles = vehicles.filter((vehicle) => vehicle.type === type);
-  }
-
-  if (region) {
-    vehicles = vehicles.filter(
-      (vehicle) =>
-        vehicle.region.toLowerCase() === region.toLowerCase()
-    );
-  }
-
-  if (search) {
-    const searchText = search.toLowerCase();
-
-    vehicles = vehicles.filter((vehicle) => {
-      return (
-        vehicle.registrationNo.toLowerCase().includes(searchText) ||
-        vehicle.name.toLowerCase().includes(searchText) ||
-        vehicle.model.toLowerCase().includes(searchText)
-      );
-    });
-  }
-
-  return vehicles;
-};
-
-const getVehicleById = async (vehicleId) => {
-  const vehicle = store.vehicles.find(
-    (currentVehicle) => currentVehicle.id === vehicleId
-  );
-
-  if (!vehicle) {
-    const error = new Error("Vehicle not found.");
-    error.statusCode = 404;
-    throw error;
-  }
-
-  return vehicle;
-};
-
-const updateVehicle = async (vehicleId, updateData) => {
-  const vehicle = await getVehicleById(vehicleId);
-
-  Object.assign(vehicle, updateData, {
-    updatedAt: new Date().toISOString(),
-  });
-
-  return vehicle;
-};
-
-const deleteVehicle = async (vehicleId) => {
-  const vehicle = await getVehicleById(vehicleId);
-
-  if (vehicle.status === "ON_TRIP") {
-    const error = new Error(
-      "A vehicle currently on a trip cannot be deleted."
-    );
-    error.statusCode = 400;
-    throw error;
-  }
-
-  const vehicleIndex = store.vehicles.findIndex(
-    (currentVehicle) => currentVehicle.id === vehicleId
-  );
-
-  store.vehicles.splice(vehicleIndex, 1);
-
-  return vehicle;
-};
-
-module.exports = {
-  createVehicle,
-  getVehicles,
-  getVehicleById,
-  updateVehicle,
-  deleteVehicle,
-};
+module.exports = router;

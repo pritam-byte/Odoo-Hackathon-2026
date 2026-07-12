@@ -1,34 +1,31 @@
 const bcrypt = require("bcrypt");
 
 const prisma = require("../../config/prisma");
+const ApiError = require("../../utils/api-error");
 const { createToken } = require("../../utils/jwt");
 
-const safeUser = (user) => {
+const safeUser = ({ id, name, email, role, createdAt }) => {
   return {
-    id: user.id,
-    name: user.name,
-    email: user.email,
-    role: user.role,
-    createdAt: user.createdAt,
+    id,
+    name,
+    email,
+    role,
+    createdAt,
   };
 };
 
 const registerUser = async ({ name, email, password, role }) => {
   const existingUser = await prisma.user.findUnique({
-    where: {
-      email,
-    },
+    where: { email },
   });
 
   if (existingUser) {
-    const error = new Error("An account with this email already exists.");
-    error.statusCode = 409;
-    throw error;
+    throw new ApiError(409, "An account with this email already exists.");
   }
 
   const passwordHash = await bcrypt.hash(password, 12);
 
-  const newUser = await prisma.user.create({
+  const user = await prisma.user.create({
     data: {
       name,
       email,
@@ -37,20 +34,16 @@ const registerUser = async ({ name, email, password, role }) => {
     },
   });
 
-  return safeUser(newUser);
+  return safeUser(user);
 };
 
 const loginUser = async ({ email, password }) => {
   const user = await prisma.user.findUnique({
-    where: {
-      email,
-    },
+    where: { email },
   });
 
   if (!user) {
-    const error = new Error("Invalid email or password.");
-    error.statusCode = 401;
-    throw error;
+    throw new ApiError(401, "Invalid email or password.");
   }
 
   const passwordMatches = await bcrypt.compare(
@@ -59,9 +52,7 @@ const loginUser = async ({ email, password }) => {
   );
 
   if (!passwordMatches) {
-    const error = new Error("Invalid email or password.");
-    error.statusCode = 401;
-    throw error;
+    throw new ApiError(401, "Invalid email or password.");
   }
 
   const token = createToken({
@@ -75,17 +66,13 @@ const loginUser = async ({ email, password }) => {
   };
 };
 
-const getCurrentUser = async (userId) => {
+const getCurrentUser = async (id) => {
   const user = await prisma.user.findUnique({
-    where: {
-      id: userId,
-    },
+    where: { id },
   });
 
   if (!user) {
-    const error = new Error("User not found.");
-    error.statusCode = 404;
-    throw error;
+    throw new ApiError(404, "User not found.");
   }
 
   return safeUser(user);
