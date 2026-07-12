@@ -1,12 +1,13 @@
-const express = require("express");
+const router = require("express").Router();
 
-const router = express.Router();
+const {
+  getDashboard,
+} = require("./dashboard.controller");
 
-router.get("/", (req, res) => {
-  return res.status(200).json({
-    success: true,
-    message: "Dashboard route is ready. Database integration is pending.",
-  });
-});
+const {
+  requireAuth,
+} = require("../../middleware/auth.middleware");
+
+router.get("/", requireAuth, getDashboard);
 
 module.exports = router;

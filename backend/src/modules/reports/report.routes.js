@@ -1,12 +1,32 @@
-const express = require("express");
+const router = require("express").Router();
 
-const router = express.Router();
+const controller = require("./report.controller");
 
-router.get("/", (req, res) => {
-  return res.status(200).json({
-    success: true,
-    message: "Report routes are ready. Database integration is pending.",
-  });
-});
+const {
+  requireAuth,
+} = require("../../middleware/auth.middleware");
+
+const {
+  allowRoles,
+} = require("../../middleware/role.middleware");
+
+router.use(requireAuth);
+
+router.get(
+  "/fuel-efficiency",
+  controller.fuelEfficiency
+);
+
+router.get(
+  "/vehicle-costs",
+  allowRoles("ADMIN", "FLEET_MANAGER", "FINANCIAL_ANALYST"),
+  controller.vehicleCosts
+);
+
+router.get(
+  "/export/vehicle-costs.csv",
+  allowRoles("ADMIN", "FLEET_MANAGER", "FINANCIAL_ANALYST"),
+  controller.exportVehicleCosts
+);
 
 module.exports = router;

@@ -1,33 +1,44 @@
-const router = require("express").Router();
+const { z } = require("zod");
 
-const controller = require("./auth.controller");
-const {
-  registerSchema,
-  loginSchema,
-} = require("./auth.validation");
+const vehicleTypes = [
+  "VAN",
+  "TRUCK",
+  "BUS",
+  "PICKUP",
+  "CAR",
+  "OTHER",
+];
 
-const {
-  validateBody,
-} = require("../../middleware/validate.middleware");
+const vehicleFields = {
+  name: z.string().trim().min(2).max(100),
 
-const {
-  requireAuth,
-} = require("../../middleware/auth.middleware");
+  model: z.string().trim().min(2).max(100),
 
-router.post(
-  "/register",
-  validateBody(registerSchema),
-  controller.register
-);
+  type: z.enum(vehicleTypes),
 
-router.post(
-  "/login",
-  validateBody(loginSchema),
-  controller.login
-);
+  region: z.string().trim().min(2).max(100).nullable(),
 
-router.post("/logout", controller.logout);
+  maxLoadCapacity: z.number().positive(),
 
-router.get("/me", requireAuth, controller.me);
+  odometer: z.number().min(0),
 
-module.exports = router;
+  acquisitionCost: z.number().min(0),
+};
+
+const createVehicleSchema = z.object({
+  registrationNo: z
+    .string()
+    .trim()
+    .min(3)
+    .max(50)
+    .toUpperCase(),
+
+  ...vehicleFields,
+});
+
+const updateVehicleSchema = z.object(vehicleFields).partial();
+
+module.exports = {
+  createVehicleSchema,
+  updateVehicleSchema,
+};

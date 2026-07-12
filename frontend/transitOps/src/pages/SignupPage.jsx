@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import heroImg from "../assets/hero.png";
+import { authService } from "../services/authService";
 
 const ROLES = [
   { value: "ADMIN", label: "Admin — System Oversight" },

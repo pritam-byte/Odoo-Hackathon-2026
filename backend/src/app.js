@@ -1,8 +1,9 @@
 const express = require("express");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
-const vehicleRoutes = require("./modules/vehicles/vehicle.routes");
+
 const authRoutes = require("./modules/auth/auth.routes");
+const vehicleRoutes = require("./modules/vehicles/vehicle.routes");
 const driverRoutes = require("./modules/drivers/driver.routes");
 const tripRoutes = require("./modules/trips/trip.routes");
 const maintenanceRoutes = require("./modules/maintenance/maintenance.routes");
@@ -11,7 +12,9 @@ const expenseRoutes = require("./modules/expenses/expense.routes");
 const dashboardRoutes = require("./modules/dashboard/dashboard.routes");
 const reportRoutes = require("./modules/reports/report.routes");
 
-const { errorHandler } = require("./middleware/error.middleware");
+const {
+  errorHandler,
+} = require("./middleware/error.middleware");
 
 const app = express();
 
@@ -24,18 +27,15 @@ app.use(
 
 app.use(express.json());
 app.use(cookieParser());
-app.use((req, res, next) => {
-  console.log(`[REQUEST] ${req.method} ${req.originalUrl}`);
-  next();
-});
 
 app.get("/api/health", (req, res) => {
-  return res.status(200).json({
+  res.json({
     success: true,
     message: "TransitOps backend is running",
   });
 });
 
+app.use("/api/auth", authRoutes);
 app.use("/api/vehicles", vehicleRoutes);
 app.use("/api/drivers", driverRoutes);
 app.use("/api/trips", tripRoutes);
@@ -44,7 +44,6 @@ app.use("/api/fuel-logs", fuelRoutes);
 app.use("/api/expenses", expenseRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/reports", reportRoutes);
-app.use("/api/auth", authRoutes);
 
 app.use(errorHandler);
 

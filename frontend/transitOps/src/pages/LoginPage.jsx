@@ -1,6 +1,7 @@
 import { useNavigate, Link } from "react-router-dom";
 import { useState } from "react";
 import heroImg from "../assets/hero.png";
+import { authService } from "../services/authService";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -29,8 +30,8 @@ export default function LoginPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Invalid credentials");
 
-      localStorage.setItem("token", data.data.token);
-      localStorage.setItem("user", JSON.stringify(data.data.user));
+      localStorage.setItem("token", data.data ? data.data.token : data.token);
+      localStorage.setItem("user", JSON.stringify(data.data ? data.data.user : data.user));
 
       navigate("/dashboard");
     } catch (err) {
@@ -137,7 +138,7 @@ export default function LoginPage() {
             >
               {loading ? "Signing in..." : "Sign in"}
             </button>
-         </form>
+          </form>
 
           <p className="text-center text-sm text-slate-500 mt-6">
             Don't have an account?{" "}
