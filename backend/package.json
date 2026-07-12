@@ -2,16 +2,16 @@
   "name": "backend",
   "version": "1.0.0",
   "description": "Odoo-Hackathon-2026 project.",
-  "main": "src/index.js",
-  "type": "module",
+  "main": "src/server.js",
   "scripts": {
-    "dev": "nodemon src/index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "nodemon src/server.js",
+    "start": "node src/server.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
     "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.7",

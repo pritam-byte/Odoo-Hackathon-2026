@@ -24,6 +24,10 @@ app.use(
 
 app.use(express.json());
 app.use(cookieParser());
+app.use((req, res, next) => {
+  console.log(`[REQUEST] ${req.method} ${req.originalUrl}`);
+  next();
+});
 
 app.get("/api/health", (req, res) => {
   return res.status(200).json({
